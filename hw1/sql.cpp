@@ -2,20 +2,19 @@
 #include <stdio.h>
 #include <mariadb/mysql.h>
 #include <iostream>
+#include <sstream>
 void display_row();
 void display_header();
 
 MYSQL_ROW sqlrow;
 MYSQL *con;
 MYSQL_RES *res_ptr;
-class db_wrapper {
-public:
-    db_wrapper();
-    ~db_wrapper();
-    void connect(char *host, char *user, char *pw, char *db_name, unsigned port);
-private:
-    /* data */
-};
+
+const char *host = "192.168.0.5";
+const char *userid = "astral";
+const char *passwd = "nau384";
+const char *db_name = "test";
+
 int main(int argc, char **argv) {  
     con = mysql_init(nullptr);
     int first_row = 1;
@@ -25,22 +24,39 @@ int main(int argc, char **argv) {
     }
     
     mysql_options(con, MYSQL_SET_CHARSET_NAME, "utf8");
-    const char *host = "192.168.0.5";
-    const char *userid = "astral";
-    const char *passwd = "nau384";
-    const char *db_name = "iden";
     con = mysql_real_connect(con, host, userid, passwd, db_name, 0, nullptr, 0);
     printf("%s\n", mysql_get_client_info());
     printf("%s\n", mysql_get_host_info(con));
     printf("%s\n", mysql_get_server_info(con));
     // check connection
+
     if (con) {
         printf("Connection success\n");
-        const char *query = "select * from idpass order by number";
-        int res = mysql_query(con, query);
+    } else {
+        fprintf(stderr, "Connection error %d: %s\n", mysql_errno(con), mysql_error(con));
+        exit(-1);
+    }  
+    std::string query;
+    while (true) {
+        std::cout << "Enter the query : ";
+        std::getline(std::cin, query);
+        if (query == "quit") {
+            std::cout << "End the program" << "\n";
+            break;
+        }
+
+        int res = mysql_query(con, query.c_str());
         if (res) {
-            std::cout << "select error: " << mysql_error(con) << "\n";
-        } else {
+            std::cout << mysql_error(con) << "\n";
+            continue;
+        }
+        // ignore() needed if ">>" used
+        std::istringstream iss(query);
+        std::string cmd;
+        iss >> cmd;
+        std::cout << cmd << "\n";
+        if (cmd == "select") {
+            // select
             res_ptr = mysql_store_result(con);
             std::cout << "Retrieved " << mysql_num_rows(res_ptr) << "\n";
 
@@ -56,14 +72,17 @@ int main(int argc, char **argv) {
                 std::cerr << "Retrive error: " << mysql_error(con) << std::endl;
             }
             mysql_free_result(res_ptr);
+        } else if (cmd == "insert") {
+            // update, delete, insert
+            int affcted_rows = mysql_affected_rows(con);
+            std::cout << "Inserted " << (unsigned long)affcted_rows << "\n";
         }
-        mysql_close(con);
+
+        std::cout << query << "\n";
+    }
+    mysql_close(con);
 
 
-    } else {
-        fprintf(stderr, "Connection error %d: %s\n",
-                mysql_errno(con), mysql_error(con));
-    }  
     return EXIT_SUCCESS;
 }
 
