@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
         std::istringstream iss(query);
         std::string cmd;
         iss >> cmd;
-        std::cout << cmd << "\n";
+        //std::cout << cmd << "\n";
         if (cmd == "select") {
             // select
             res_ptr = mysql_store_result(con);
@@ -76,12 +76,20 @@ int main(int argc, char **argv) {
             // update, delete, insert
             int affcted_rows = mysql_affected_rows(con);
             std::cout << "Inserted " << (unsigned long)affcted_rows << "\n";
+        } else if (cmd == "use") {
+            std::string new_db_name;
+            iss >> new_db_name;
+            int res = mysql_select_db(con, new_db_name.c_str());
+            if (res == 0) {
+                std::cout << "Database changed to " << new_db_name << "\n";
+            } else {
+                std::cout << "Dabased change Fail!" << "\n";
+            }
         }
 
-        std::cout << query << "\n";
+        std::cout << "Your query : " << query << "\n";
     }
     mysql_close(con);
-
 
     return EXIT_SUCCESS;
 }
@@ -92,6 +100,7 @@ void display_header() {
     while ((field_ptr = mysql_fetch_field(res_ptr)) != nullptr) {
         printf("\t Name: %s\n", field_ptr->name);
         printf("\t Type: ");
+        
         if (IS_NUM(field_ptr->type)) {
             printf("Numeric field\n");
         } else {
@@ -119,7 +128,7 @@ void display_header() {
 void display_row() {
     unsigned field_count = 0;
     while (field_count < mysql_field_count(con)) {
-        printf("%s\n", sqlrow[field_count++]);
+        printf("%s ", sqlrow[field_count++]);
     }
     printf("\n");
 }
