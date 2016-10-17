@@ -1,3 +1,6 @@
+create database SPdb;
+use SPdb
+
 create table S
 (
 snum varchar(4), 
@@ -49,7 +52,65 @@ insert into SP values
 ('s4', 'p2', 200),
 ('s4', 'p4', 300),
 ('s4', 'p5', 400);
+/* 
+8.3.1 
+get supplier numbers and status 
+for suppliers 
+in paris with status > 20
+*/
+select sx.snum, sx.status 
+from s sx
+where sx.city = 'paris' 
+and sx.status > 20
+;
 
+/*
+8.3.2 
+Get all pairs of supplier numbers 
+such that the two suppliers are located in the same city
+*/
+select sx.snum as first_num, sy.snum as second_num
+from s sx, s sy 
+where 	sx.city = sy.city 
+	and sx.snum < sy.snum;
+
+/*
+8.3.3
+Get supplier names for suppliers 
+who supply part p2
+*/
+select sname 
+from s sx
+where exists (
+select * from sp spx
+where spx.snum = sx.snum
+and	spx.pnum = 'p2'
+);
+
+/*
+8.3.4
+Get supplier names for suppliers 
+who supply at least one red part
+*/
+select sx.sname 
+from s sx
+where exists(
+	select * from sp spx
+	where sx.snum = spx.snum 
+	and exists (
+			select * from p px 
+			where px.pnum = spx.pnum 
+			and px.color = 'red'
+		)
+);
+
+
+/* 
+8.3.5 
+get supplier names for suppliers
+who supply at least one part 
+supplied by supplier s2
+*/
 select sx.sname 
 from s sx 
 where exists(select * from sp spx 
